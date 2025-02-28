@@ -1,0 +1,9 @@
+{
+    "token": "6745529631:AAHGWsZiN80gnVkAIsgl8P0gbcecmac3z6c",
+    "chat_ids": ["903088105", "5809479414"],
+    "websocket_uri": "ws://15.237.189.91:5000/ws",
+    "plc_ip": "172.20.17.133",
+    "plc_rack": 0,
+    "plc_slot": 1,
+    "db_number": 1
+}
