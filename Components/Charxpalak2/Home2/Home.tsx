@@ -1,0 +1,298 @@
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  Dimensions,
+  ScrollView,
+  Image,
+  StyleSheet,
+} from "react-native";
+import ElectricDashedLine from "./ElectricDashedLine";
+import ErrorList from "../Errors/Error";
+
+const { width } = Dimensions.get("window");
+
+const Home = () => {
+  const [cardValues, setCardValues] = useState({
+    genarator_voltage: "0 V",
+    generator_current: "0 A",
+    rpm: "0 ",
+    Suv_balandligi: "0 m",
+    active_power: "0 W",
+    A_faza_voltage: "0",
+    B_faza_voltage: "0",
+    C_faza_voltage: "0",
+    A_current: "0",
+    B_current: "0",
+    C_current: "0",
+    Output_power: "0 W",
+    temperatureData: {
+      ichki_real_namlik: "0 %",
+      ichki_real_temp: "0 °C",
+      tashqi_real_namlik: "0 %",
+      tashqi_real_temp: "0 °C",
+    },
+  });
+
+  const WS_URL = "ws://54.93.213.231:9090/micro_gs_data_blok_ws1";
+  const MAX_RETRIES = 5;
+  const RETRY_DELAY = 5000;
+
+  const connectWebSocket = (url: string | URL, retryCount = 0) => {
+    const socket = new WebSocket(url);
+
+    socket.onopen = () => {
+      console.log(`WebSocket ulandi: ${url}`);
+    };
+
+    socket.onmessage = (event) => {
+      try {
+        const apiData = JSON.parse(event.data);
+
+        const windController = apiData?.wind_controller || {};
+        const windController1 = apiData?.datas || {};
+        const windController2 = apiData?.wind_2 || {};
+        const windController3 = apiData?.wind2_1 || {};
+        const tempData = apiData?.namlik_temp || {};
+
+        setCardValues({
+          genarator_voltage: `${windController.genarator_voltage / 10 || 0} V`,
+          generator_current: `${windController.generator_current / 10 || 0} A`,
+          rpm: `${windController.rpm || 0} rpm`,
+          Suv_balandligi: `${windController1.уревон_воды || 0} sm`,
+          active_power: `${windController2.active_power || 0} kW`,
+          A_faza_voltage: `${windController3.A_faza_voltage || 0} `,
+          B_faza_voltage: `${windController3.B_faza_voltage || 0} `,
+          C_faza_voltage: `${windController3.C_faza_voltage || 0} `,
+          A_current: `${windController3.A_current || 0} `,
+          B_current: `${windController3.B_current || 0} `,
+          C_current: `${windController3.C_current || 0} `,
+          Output_power: `${windController2.Output_power || 0} kW`,
+          temperatureData: {
+            ichki_real_namlik: `${tempData.ichki_real_namnik || 0} %`,
+            ichki_real_temp: `${tempData.ichki_real_temp || 0} °C`,
+            tashqi_real_namlik: `${tempData.tashqi_real_namlik || 0} %`,
+            tashqi_real_temp: `${tempData.tashqi_real_temp || 0} °C`,
+          },
+        });
+      } catch (error) {
+        console.error("WebSocket ma'lumotlarini parse qilishda xato:", error);
+      }
+    };
+
+    socket.onerror = (error) => {
+      console.error(`WebSocket xatosi: ${url}`, error);
+    };
+
+    socket.onclose = () => {
+      console.log(`WebSocket uzildi: ${url}`);
+      if (retryCount < MAX_RETRIES) {
+        console.log(`Qayta ulanish urinilmoqda (${retryCount + 1}/${MAX_RETRIES})...`);
+        setTimeout(() => connectWebSocket(url, retryCount + 1), RETRY_DELAY);
+      } else {
+        console.error(`Maksimal urinishlar soniga yetdi: ${url}`);
+      }
+    };
+
+    return socket;
+  };
+
+  useEffect(() => {
+    const socket = connectWebSocket(WS_URL);
+    return () => {
+      socket.close();
+    };
+  }, []);
+
+  const cardData = [
+    { value: cardValues.rpm, image: require("../../../assets/generator.png") },
+    { value: cardValues.genarator_voltage, image: require("../../../assets/controler.png") },
+    { value: cardValues.generator_current, image: require("../../../assets/tok.png") },
+    { value: cardValues.Suv_balandligi, image: require("../../../assets/Growatt.png") },
+    { value: cardValues.active_power },
+    { value: cardValues.A_faza_voltage },
+    { value: cardValues.B_faza_voltage },
+    { value: cardValues.C_faza_voltage },
+    { value: cardValues.A_current },
+    { value: cardValues.B_current },
+    { value: cardValues.C_current },
+    { value: cardValues.Output_power },
+  ];
+
+  return (
+    <ScrollView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={{ fontSize: 30, fontWeight: "bold" }}>
+          Yellow Water Wheel
+        </Text>
+        <Text style={{ fontSize: 20, textAlign: "center" }}>
+          Chaxpalakning real vaqtdagi texnik malumotlari
+        </Text>
+      </View>
+      <View style={{right:'5%'}}>
+      <ErrorList  />
+      </View>
+      <View style={styles.cardsContainer}>
+        <View style={styles.card}>
+          <Image source={cardData[0].image} style={styles.cardImage} />
+          <Text style={styles.cardValue}>{cardData[0].value}</Text>
+        </View>
+        <View
+          style={[
+            styles.dashContainerHorizontal,
+            { transform: [{ rotate: "0deg" }] },
+          ]}
+        >
+          <ElectricDashedLine />
+        </View>
+        <View style={styles.card}>
+          <Image source={cardData[1].image} style={styles.cardImage} />
+          <Text style={styles.cardValue}>{cardData[1].value}</Text>
+          <Text style={styles.cardValue}>{cardData[2].value}</Text>
+          <Text style={styles.cardValue}>{cardData[4].value}</Text>
+        </View>
+        <View style={styles.card}>
+          <Image source={cardData[2].image} style={styles.cardImage} />
+        </View>
+        <View style={styles.dashContainerVertical}>
+          <ElectricDashedLine />
+        </View>
+        <View style={styles.dashContainerHorizontal}>
+          <ElectricDashedLine />
+        </View>
+        <View style={styles.card}>
+          <Image source={cardData[3].image} style={styles.cardImage} />
+          <View style={{ flexDirection: "row", top: "5%" }}>
+            <View>
+              <Text style={styles.cardValue}>V</Text>
+              <Text style={styles.cardValue}>{cardData[8].value}</Text>
+              <Text style={styles.cardValue}>{cardData[9].value}</Text>
+              <Text style={styles.cardValue}>{cardData[10].value}</Text>
+            </View>
+            <View>
+              <Text style={styles.cardValue}>A</Text>
+              <Text style={styles.cardValue}>{cardData[5].value}</Text>
+              <Text style={styles.cardValue}>{cardData[6].value}</Text>
+              <Text style={styles.cardValue}>{cardData[7].value}</Text>
+            </View>
+          </View>
+          <View style={{ top: "4%" }}>
+            <Text style={styles.cardValue}>{cardData[11].value}</Text>
+          </View>
+        </View>
+      </View>
+      <View style={styles.temperatureCardContainer}>
+        <View style={styles.card1}>
+          <Text style={styles.cardTitle}>Atrof-muhit ma'lumotlari</Text>
+          <View style={styles.temperatureContent}>
+            <Text style={styles.cardValue}>
+              Ichki harorat: {cardValues.temperatureData.ichki_real_temp}
+            </Text>
+            <Text style={styles.cardValue}>
+              Ichki namlik: {cardValues.temperatureData.ichki_real_namlik}
+            </Text>
+            <Text style={styles.cardValue}>
+              Tashqi harorat: {cardValues.temperatureData.tashqi_real_temp}
+            </Text>
+            <Text style={styles.cardValue}>
+              Tashqi namlik: {cardValues.temperatureData.tashqi_real_namlik}
+            </Text>
+          </View>
+        </View>
+      </View>
+    </ScrollView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: "5%",
+    backgroundColor: "#FEFF9F",
+  },
+  dashContainerHorizontal: {
+    justifyContent: "center",
+    alignItems: "center",
+    width: "10%",
+    height: "25%",
+    marginHorizontal: "2.5%",
+    marginTop: "5%",
+    transform: [{ rotate: "180deg" }],
+  },
+  dashContainerVertical: {
+    justifyContent: "center",
+    alignItems: "center",
+    width: "25%",
+    height: "10%",
+    marginVertical: "2.5%",
+    transform: [{ rotate: "90deg" }],
+    position: "absolute",
+    top: "33.5%",
+    left: (width - -420) / 4 + 40,
+  },
+  header: {
+    alignItems: "center",
+    marginVertical: "8%",
+    top: "2%",
+    justifyContent: "center",
+  },
+  cardsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    marginTop: "5%",
+    paddingBottom: "5%",
+  },
+  card: {
+    width: (width - width * 0.3) / 2,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: "#000",
+    borderRadius: 10,
+    padding: "2.5%",
+    alignItems: "center",
+    marginBottom: "23%",
+    backgroundColor: "#FEFF9F",
+  },
+  card1: {
+    width: (width - width * 0.003) / 2,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: "#000",
+    borderRadius: 10,
+    padding: "2.5%",
+    alignItems: "center",
+    marginBottom: "23%",
+    backgroundColor: "#FEFF9F",
+  },
+  cardImage: {
+    width: "100%",
+    height: width * 0.27,
+    marginBottom: "1%",
+    top: "5%",
+  },
+  cardValue: {
+    fontSize: width * 0.035,
+    fontWeight: "bold",
+    color: "#000",
+    marginTop: "1.25%",
+    top: "5%",
+  },
+  temperatureCardContainer: {
+    width: "100%",
+    alignItems: "center",
+    marginBottom: "5%",
+    bottom: "7%",
+  },
+  cardTitle: {
+    fontSize: width * 0.045,
+    fontWeight: "bold",
+    color: "#000",
+    marginBottom: "2%",
+  },
+  temperatureContent: {
+    alignItems: "center",
+  },
+});
+
+export default Home;

@@ -1,58 +1,69 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
+import { AppState } from 'react-native';
 import { Provider } from 'react-redux';
-import { store } from './src/store'; // Store yo'li to'g'ri ekanligiga ishonch hosil qiling
-import StadiumBookingHome from './screens/StadiumBookingHome'; // "screns" -> "screens"
-import Profil from './screens/Profil';
-import Brons from './screens/Brons';
-import Maxfiylik from './screens/Maxfiylik';
-import Settings from './screens/Settings';
-import Yordam from './screens/Yordam';
-import EditPasswordScreen from './screens/EditPassword';
+import store from './redux/store';
+import CustomKeyboard from './Components/Password/password';
+import MainTabs from './Components/Navigation/Tabs1/MainTabs';
+import MainTabs2 from './Components/Navigation/Tabs2/MainTabs2';
+import DataTax from './Components/Data/Data';
+import { createStackNavigator } from '@react-navigation/stack';
+
 const Stack = createStackNavigator();
 
-type RootStackParamList = {
-  Home: undefined;
-  Profile: undefined;
-  Brons: undefined;
-  Maxfiylik: undefined;
-  Settings: undefined;
-  Yordam: undefined;
-};
+export default function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-const App: React.FC = () => {
-  const [imageUri, setImageUri] = useState<string | null>(null);
-
-  const handleImageChange = (uri: string) => {
-    setImageUri(uri);
+  const handleLogin = () => {
+    setIsLoggedIn(true);
   };
+
+  const sendApiRequest = () => {
+    fetch('http://54.93.213.231:9090/python_bool', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        key: 'bool_python',
+        value: false,
+      }),
+    })
+      .then((response) => response.json())
+      .then((data) => console.log(data))
+      .catch((error) => console.error('Error:', error));
+  };
+
+  useEffect(() => {
+    // AppState o‘zgarishini kuzatish
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'background') {
+        sendApiRequest();
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
 
   return (
     <Provider store={store}>
       <NavigationContainer>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="Home">
-            {(props) => <StadiumBookingHome {...props} imageUri={imageUri} />}
-          </Stack.Screen>
-          <Stack.Screen name="Profile">
-            {(props) => (
-              <Profil
-                {...props}
-                imageUri={imageUri ?? ''} // null bo'lsa bo'sh string
-                onImageChange={handleImageChange}
-              />
-            )}
-          </Stack.Screen>
-          <Stack.Screen name="Brons" component={Brons} />
-          <Stack.Screen name="Maxfiylik" component={Maxfiylik} />
-          <Stack.Screen name="Settings" component={Settings} />
-          <Stack.Screen name="Yordam" component={Yordam} />
-          <Stack.Screen name="EditPassword" component={EditPasswordScreen} />
+          {!isLoggedIn ? (
+            <Stack.Screen name="Login">
+              {() => <CustomKeyboard onLogin={handleLogin} />}
+            </Stack.Screen>
+          ) : (
+            <>
+              <Stack.Screen name="DataTax" component={DataTax} />
+              <Stack.Screen name="MainTabs" component={MainTabs} />
+              <Stack.Screen name="MainTabs2" component={MainTabs2} />
+            </>
+          )}
         </Stack.Navigator>
       </NavigationContainer>
     </Provider>
   );
-};
-
-export default App;
+}

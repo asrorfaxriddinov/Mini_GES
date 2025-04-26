@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "my-new",
-    "slug": "my-new",
+    "name": "Mini GES",
+    "slug": "Mini GES",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

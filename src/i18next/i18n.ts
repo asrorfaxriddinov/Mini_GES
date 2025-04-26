@@ -4,6 +4,8 @@ import { initReactI18next } from "react-i18next";
 const resources = {
   "O'zbek": {
     translation: {
+      home:'Asosiy',
+      profil:'Profilim',
       settings: "Sozlamalar",
       stadiums_loaded: "Stadionlar yuklandi",
       name: "Ism",
@@ -22,11 +24,14 @@ const resources = {
       Holatni:"Holatni o'zgartrish",
       Tungi:"Tungi rejim",
       tahrirlash:"Malumotlarni tahrirlash",
-      Parol:"Parolni O'zgartrish"
+      Parol:"Parolni O'zgartrish",
+      Boshqaruv:"Boshqaruv"
     },
   },
   "Русский": {
     translation: {
+      home:'Основной',
+      profil:'Профиль',
       settings: "Настройки",
       stadiums_loaded: "Стадионы загружены",
       name: "Имя",
@@ -46,10 +51,13 @@ const resources = {
       Tungi:"Ночной режим",
       tahrirlash:"Редактирование данных",
       Parol:"Изменить пароль",
+      Boshqaruv:"Управление"
     },
   },
   English: {
     translation: {
+      home:'Home',
+      profil:'My profile',
       settings: "Settings",
       stadiums_loaded: "Stadiums loaded",
       name: "Name",
@@ -69,6 +77,7 @@ const resources = {
       Tungi:"Night mode",
       tahrirlash:"Edit User Information",
       Parol:"Change Password",
+      Boshqaruv:"Management"
     },
   },
 };

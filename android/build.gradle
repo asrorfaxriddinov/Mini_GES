@@ -11,6 +11,7 @@ buildscript {
         ndkVersion = "26.1.10909125"
     }
     repositories {
+        maven { url 'https://plugins.gradle.org/m2/' }
         google()
         mavenCentral()
     }
