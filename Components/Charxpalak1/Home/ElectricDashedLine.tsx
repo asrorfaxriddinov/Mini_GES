@@ -3,53 +3,49 @@ import { View, Animated, StyleSheet } from 'react-native';
 
 const ElectricDashedLine = () => {
   const animation = useRef(new Animated.Value(0)).current;
-  const [rpmValue, setRpmValue] = useState(0); // Store rpm value from WebSocket
+  const animationRef = useRef<Animated.CompositeAnimation | null>(null);
+  const [rpmValue, setRpmValue] = useState(0);
 
   // WebSocket connection
   useEffect(() => {
-    const ws = new WebSocket('ws://54.93.213.231:9090/micro_gs_data_blok_ws');
+    const ws = new WebSocket('ws://0.0.0.0:9090/micro_gs_data_blok_ws');
 
-    ws.onopen = () => {
-      console.log('WebSocket connected');
-    };
+    ws.onopen = () => console.log('WebSocket connected');
 
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        const rpm = data?.wind_controller?.rpm || 0; // Extract rpm safely
-        setRpmValue(rpm); // Update state with rpm value
+        const rpm = data?.wind_controller?.rpm || 0;
+        setRpmValue(rpm);
       } catch (error) {
         console.error('Error parsing WebSocket data:', error);
       }
     };
 
-    ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
-    };
+    ws.onerror = (error) => console.error('WebSocket error:', error);
+    ws.onclose = () => console.log('WebSocket closed');
 
-    ws.onclose = () => {
-      console.log('WebSocket closed');
-    };
-
-    return () => {
-      ws.close(); // Cleanup on unmount
-    };
+    return () => ws.close();
   }, []);
 
-  // Animation effect
+  // Start or stop animation based on RPM
   useEffect(() => {
-    if (rpmValue > 0) {
-      Animated.loop(
+    if (rpmValue > 0 && !animationRef.current) {
+      animationRef.current = Animated.loop(
         Animated.timing(animation, {
           toValue: 1,
           duration: 700,
           useNativeDriver: true,
         })
-      ).start();
-    } else {
-      animation.setValue(0); // Reset animation when rpm is 0
+      );
+      animation.setValue(0); // reset
+      animationRef.current.start();
+    } else if (rpmValue === 0 && animationRef.current) {
+      animationRef.current.stop();
+      animationRef.current = null;
+      animation.setValue(0); // reset when stopping
     }
-  }, [animation, rpmValue]);
+  }, [rpmValue, animation]);
 
   const DASHED_LINE_WIDTH = 80;
   const ELECTRIC_DASH_WIDTH = 20;
@@ -64,8 +60,7 @@ const ElectricDashedLine = () => {
     outputRange: [0, 1, 1, 0],
   });
 
-  // Determine colors based on rpmValue
-  const lineColor = rpmValue === 0 ? '#FF0000' : '#00FF00'; // Red if 0, Green if > 0
+  const lineColor = rpmValue === 0 ? '#FF0000' : '#00FF00';
 
   return (
     <View style={styles.container}>

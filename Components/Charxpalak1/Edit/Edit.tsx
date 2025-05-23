@@ -6,10 +6,10 @@ import ErrorList from '../Errors/Error';
 const Edit = () => {
   const [tableHead] = useState(['Parametr', 'Qiymat', 'Holat']);
   const [tableData, setTableData] = useState([]);
-  const [ setIsConnected] = useState(false);
+  const [IsConnected, setIsConnected] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState('Ulanmoqda...');
   const [blinkAnim] = useState(new Animated.Value(1));
-  const WS_URL = "ws://54.93.213.231:9090/micro_gs_data_blok_ws1";
+  const WS_URL = "ws://0.0.0.0:9090/micro_gs_data_blok_ws";
   const MAX_RETRIES = 5;
   const RETRY_DELAY = 5000;
 

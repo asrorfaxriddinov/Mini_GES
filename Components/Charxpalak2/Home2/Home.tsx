@@ -10,7 +10,7 @@ import {
 import ElectricDashedLine from "./ElectricDashedLine";
 import ErrorList from "../Errors/Error";
 
-const { width } = Dimensions.get("window");
+const { width, height } = Dimensions.get("window");
 
 const Home = () => {
   const [cardValues, setCardValues] = useState({
@@ -26,6 +26,7 @@ const Home = () => {
     B_current: "0",
     C_current: "0",
     Output_power: "0 W",
+    Total_generating_capacity: "0 kW",
     temperatureData: {
       ichki_real_namlik: "0 %",
       ichki_real_temp: "0 °C",
@@ -34,81 +35,74 @@ const Home = () => {
     },
   });
 
-  const WS_URL = "ws://54.93.213.231:9090/micro_gs_data_blok_ws1";
-  const MAX_RETRIES = 5;
-  const RETRY_DELAY = 5000;
+  const API_URL = "http://0.0.0.0:9090/micro_gs_data_blok_read1";
+  const POLLING_INTERVAL = 1000; // 1 second
 
-  const connectWebSocket = (url: string | URL, retryCount = 0) => {
-    const socket = new WebSocket(url);
-
-    socket.onopen = () => {
-      console.log(`WebSocket ulandi: ${url}`);
-    };
-
-    socket.onmessage = (event) => {
-      try {
-        const apiData = JSON.parse(event.data);
-
-        const windController = apiData?.wind_controller || {};
-        const windController1 = apiData?.datas || {};
-        const windController2 = apiData?.wind_2 || {};
-        const windController3 = apiData?.wind2_1 || {};
-        const tempData = apiData?.namlik_temp || {};
-
-        setCardValues({
-          genarator_voltage: `${windController.genarator_voltage / 10 || 0} V`,
-          generator_current: `${windController.generator_current / 10 || 0} A`,
-          rpm: `${windController.rpm || 0} rpm`,
-          Suv_balandligi: `${windController1.уревон_воды || 0} sm`,
-          active_power: `${windController2.active_power || 0} kW`,
-          A_faza_voltage: `${windController3.A_faza_voltage || 0} `,
-          B_faza_voltage: `${windController3.B_faza_voltage || 0} `,
-          C_faza_voltage: `${windController3.C_faza_voltage || 0} `,
-          A_current: `${windController3.A_current || 0} `,
-          B_current: `${windController3.B_current || 0} `,
-          C_current: `${windController3.C_current || 0} `,
-          Output_power: `${windController2.Output_power || 0} kW`,
-          temperatureData: {
-            ichki_real_namlik: `${tempData.ichki_real_namnik || 0} %`,
-            ichki_real_temp: `${tempData.ichki_real_temp || 0} °C`,
-            tashqi_real_namlik: `${tempData.tashqi_real_namlik || 0} %`,
-            tashqi_real_temp: `${tempData.tashqi_real_temp || 0} °C`,
-          },
-        });
-      } catch (error) {
-        console.error("WebSocket ma'lumotlarini parse qilishda xato:", error);
+  const fetchData = async () => {
+    try {
+      const response = await fetch(API_URL);
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
       }
-    };
+      const apiData = await response.json();
 
-    socket.onerror = (error) => {
-      console.error(`WebSocket xatosi: ${url}`, error);
-    };
+      const windController = apiData?.wind_controller || {};
+      const windController1 = apiData?.datas || {};
+      const windController2 = apiData?.wind_2 || {};
+      const windController3 = apiData?.wind2_1 || {};
+      const tempData = apiData?.namlik_temp || {};
 
-    socket.onclose = () => {
-      console.log(`WebSocket uzildi: ${url}`);
-      if (retryCount < MAX_RETRIES) {
-        console.log(`Qayta ulanish urinilmoqda (${retryCount + 1}/${MAX_RETRIES})...`);
-        setTimeout(() => connectWebSocket(url, retryCount + 1), RETRY_DELAY);
-      } else {
-        console.error(`Maksimal urinishlar soniga yetdi: ${url}`);
-      }
-    };
-
-    return socket;
+      setCardValues({
+        genarator_voltage: `${windController.genarator_voltage / 10 || 0} V`,
+        generator_current: `${windController.generator_current / 10 || 0} A`,
+        rpm: `${windController.rpm || 0} rpm`,
+        Suv_balandligi: `${windController1.уревон_воды || 0} sm`,
+        active_power: `${((windController2['Active power'] / 1000) || 0).toFixed(1)} kW`,
+        A_faza_voltage: `${windController3.A_faza_voltage || 0} `,
+        B_faza_voltage: `${windController3.B_faza_voltage || 0} `,
+        C_faza_voltage: `${windController3.C_faza_voltage || 0} `,
+        A_current: `${windController3.A_current || 0} `,
+        B_current: `${windController3.B_current || 0} `,
+        C_current: `${windController3.C_current || 0} `,
+        Output_power: `${((windController2['Output power'] / 1000) || 0).toFixed(1)} kW`,
+        Total_generating_capacity: `${windController2['Total generating capacity'] || 0} kW`,
+        temperatureData: {
+          ichki_real_namlik: `${tempData.ichki_real_namnik || 0} %`,
+          ichki_real_temp: `${tempData.ichki_real_temp || 0} °C`,
+          tashqi_real_namlik: `${tempData.tashqi_real_namlik || 0} %`,
+          tashqi_real_temp: `${tempData.tashqi_real_temp || 0} °C`,
+        },
+      });
+    } catch (error) {
+      console.error("Ma'lumot olishda xato:", error);
+    }
   };
 
   useEffect(() => {
-    const socket = connectWebSocket(WS_URL);
+    // Start polling when component mounts
+    fetchData(); // Initial fetch
+    const intervalId = setInterval(fetchData, POLLING_INTERVAL);
+
+    // Cleanup: stop polling when component unmounts
     return () => {
-      socket.close();
+      clearInterval(intervalId);
     };
   }, []);
 
   const cardData = [
     { value: cardValues.rpm, image: require("../../../assets/generator.png") },
-    { value: cardValues.genarator_voltage, image: require("../../../assets/controler.png") },
-    { value: cardValues.generator_current, image: require("../../../assets/tok.png") },
-    { value: cardValues.Suv_balandligi, image: require("../../../assets/Growatt.png") },
+    {
+      value: cardValues.genarator_voltage,
+      image: require("../../../assets/controler.png"),
+    },
+    {
+      value: cardValues.generator_current,
+      image: require("../../../assets/tok.png"),
+    },
+    {
+      value: cardValues.Suv_balandligi,
+      image: require("../../../assets/Growatt.png"),
+    },
     { value: cardValues.active_power },
     { value: cardValues.A_faza_voltage },
     { value: cardValues.B_faza_voltage },
@@ -117,6 +111,8 @@ const Home = () => {
     { value: cardValues.B_current },
     { value: cardValues.C_current },
     { value: cardValues.Output_power },
+    { value: cardValues.Output_power },
+    { value: cardValues.Total_generating_capacity },
   ];
 
   return (
@@ -129,11 +125,21 @@ const Home = () => {
           Chaxpalakning real vaqtdagi texnik malumotlari
         </Text>
       </View>
-      <View style={{right:'5%'}}>
-      <ErrorList  />
+      <View style={{ right: "5%", top: "0%" }}>
+        <ErrorList />
       </View>
       <View style={styles.cardsContainer}>
         <View style={styles.card}>
+          <Text
+            style={{
+              fontSize: 16,
+              textAlign: "center",
+              color: parseFloat(cardValues.rpm) > 0 ? "#38b000" : "red",
+              fontWeight: 'bold'
+            }}
+          >
+            Generator
+          </Text>
           <Image source={cardData[0].image} style={styles.cardImage} />
           <Text style={styles.cardValue}>{cardData[0].value}</Text>
         </View>
@@ -146,13 +152,34 @@ const Home = () => {
           <ElectricDashedLine />
         </View>
         <View style={styles.card}>
+          <Text
+            style={{
+              fontSize: 16,
+              textAlign: "center",
+              color: parseFloat(cardValues.rpm) > 0 ? "#38b000" : "red",
+              fontWeight: 'bold'
+            }}
+          >
+            Controller
+          </Text>
           <Image source={cardData[1].image} style={styles.cardImage} />
           <Text style={styles.cardValue}>{cardData[1].value}</Text>
           <Text style={styles.cardValue}>{cardData[2].value}</Text>
           <Text style={styles.cardValue}>{cardData[4].value}</Text>
         </View>
         <View style={styles.card}>
+          <Text
+            style={{
+              fontSize: 16,
+              textAlign: "center",
+              color: parseFloat(cardValues.rpm) > 0 ? "#38b000" : "red",
+              fontWeight: 'bold'
+            }}
+          >
+            Elektr tarmog'i
+          </Text>
           <Image source={cardData[2].image} style={styles.cardImage} />
+          <Text style={styles.cardValue}>{cardData[13].value}</Text>
         </View>
         <View style={styles.dashContainerVertical}>
           <ElectricDashedLine />
@@ -161,23 +188,33 @@ const Home = () => {
           <ElectricDashedLine />
         </View>
         <View style={styles.card}>
+          <Text
+            style={{
+              fontSize: 20,
+              textAlign: "center",
+              color: parseFloat(cardValues.rpm) > 0 ? "#38b000" : "red",
+              fontWeight: 'bold'
+            }}
+          >
+            Invertor
+          </Text>
           <Image source={cardData[3].image} style={styles.cardImage} />
           <View style={{ flexDirection: "row", top: "5%" }}>
-            <View>
-              <Text style={styles.cardValue}>V</Text>
-              <Text style={styles.cardValue}>{cardData[8].value}</Text>
-              <Text style={styles.cardValue}>{cardData[9].value}</Text>
-              <Text style={styles.cardValue}>{cardData[10].value}</Text>
+            <View style={{right:10}}>
+              <Text style={styles.text}>A </Text>
+              <Text style={styles.text}>{Number(cardData[8]?.value) / 10}</Text>
+              <Text style={styles.text}>{Number(cardData[9]?.value) / 10}</Text>
+              <Text style={styles.text}>{Number(cardData[10]?.value) / 10}</Text>
             </View>
-            <View>
-              <Text style={styles.cardValue}>A</Text>
-              <Text style={styles.cardValue}>{cardData[5].value}</Text>
-              <Text style={styles.cardValue}>{cardData[6].value}</Text>
-              <Text style={styles.cardValue}>{cardData[7].value}</Text>
+            <View style={{left:10}}>
+              <Text style={styles.text}> V</Text>
+              <Text style={styles.text}>{Number(cardData[5]?.value) / 10}</Text>
+              <Text style={styles.text}>{Number(cardData[6]?.value) / 10}</Text>
+              <Text style={styles.text}>{Number(cardData[7]?.value) / 10}</Text>
             </View>
           </View>
-          <View style={{ top: "4%" }}>
-            <Text style={styles.cardValue}>{cardData[11].value}</Text>
+          <View style={{ top: "8%", paddingBottom: "7%" }}>
+            <Text style={styles.text}>{cardData[11].value}</Text>
           </View>
         </View>
       </View>
@@ -218,6 +255,9 @@ const styles = StyleSheet.create({
     marginHorizontal: "2.5%",
     marginTop: "5%",
     transform: [{ rotate: "180deg" }],
+  },
+  text: {
+    fontWeight: 'bold'
   },
   dashContainerVertical: {
     justifyContent: "center",

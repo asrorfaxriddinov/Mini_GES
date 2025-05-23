@@ -1,7 +1,11 @@
 package com.asror09_10.mynew
 
 import android.app.Application
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
 import android.content.res.Configuration
+import android.os.Build
 import com.facebook.react.PackageList
 import com.facebook.react.ReactApplication
 import com.facebook.react.ReactNativeHost
@@ -13,7 +17,7 @@ import com.facebook.react.soloader.OpenSourceMergedSoMapping
 import com.facebook.soloader.SoLoader
 import expo.modules.ApplicationLifecycleDispatcher
 import expo.modules.ReactNativeHostWrapper
-import com.onesignal.OneSignal // OneSignal import qilish
+import com.onesignal.OneSignal
 
 class MainApplication : Application(), ReactApplication {
 
@@ -22,8 +26,6 @@ class MainApplication : Application(), ReactApplication {
         object : DefaultReactNativeHost(this) {
             override fun getPackages(): List<ReactPackage> {
                 val packages = PackageList(this).packages
-                // Packages that cannot be autolinked yet can be added manually here, for example:
-                // packages.add(new MyReactNativePackage());
                 return packages
             }
 
@@ -43,18 +45,36 @@ class MainApplication : Application(), ReactApplication {
         super.onCreate()
         SoLoader.init(this, OpenSourceMergedSoMapping)
         if (BuildConfig.IS_NEW_ARCHITECTURE_ENABLED) {
-            // If you opted-in for the New Architecture, we load the native entry point for this app.
             load()
         }
+
         ApplicationLifecycleDispatcher.onApplicationCreate(this)
 
-        // OneSignal Initialization
+        // OneSignal initialization
         OneSignal.initWithContext(this)
-        OneSignal.setAppId("ddbad365-867a-45b3-8d65-8692aa88e0d0") // OneSignal App ID bilan almashtiring
+        OneSignal.setAppId("ddbad365-867a-45b3-8d65-8692aa88e0d0")
+
+        // Create notification channel without sound
+        createNotificationChannel(this)
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
         ApplicationLifecycleDispatcher.onConfigurationChanged(this, newConfig)
+    }
+
+    private fun createNotificationChannel(context: Context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                "alarm_channel",
+                "Avariyalik bildirishnoma",
+                NotificationManager.IMPORTANCE_HIGH
+            )
+            // Sound removed — silent or default notification
+            channel.setSound(null, null)
+
+            val manager = context.getSystemService(NotificationManager::class.java)
+            manager.createNotificationChannel(channel)
+        }
     }
 }

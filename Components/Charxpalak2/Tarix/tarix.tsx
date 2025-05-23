@@ -29,7 +29,7 @@ const App = () => {
     setLoading(true);
     setDownloadSuccess(false);
 
-    const url = 'http://54.93.213.231:9090/post_monitor_download';
+    const url = 'http://0.0.0.0:9090/post_monitor_download';
     const data = {
       start_date: formatDate(startDate),
       end_date: formatDate(endDate),

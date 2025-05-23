@@ -52,7 +52,7 @@ const CustomTabBar = ({ state, navigation, isDarkMode = false }: CustomTabBarPro
       }
 
       // /login so'rovini yuborish (avvalgi kodda eslab qolingan)
-      const loginResponse = await fetch(`http://54.93.213.231:9090/login?email=${cachedEmail}`, {
+      const loginResponse = await fetch(`http://0.0.0.0:9090/login?email=${cachedEmail}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
       });
@@ -131,7 +131,7 @@ const CustomTabBar = ({ state, navigation, isDarkMode = false }: CustomTabBarPro
         style={{ alignItems: 'center', width: 70 }}
       >
         <Image
-          source={require('../../../assets/edit.png')}
+          source={require('../../../assets/boshqaruv.png')}
           style={{
             width: 25,
             height: 25,

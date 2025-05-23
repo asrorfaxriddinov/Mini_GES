@@ -62,7 +62,7 @@ const htmlContent = `
             startWebSocket();
         }
 
-        connectWebSocket('ws://54.93.213.231:8081/view?id=camera1', 'video1');
+        connectWebSocket('ws://0.0.0.0:8081/view?id=camera1', 'video1');
     </script>
 </body>
 </html>

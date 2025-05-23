@@ -15,7 +15,7 @@ const ErrorList = () => {
   const [showAllErrors, setShowAllErrors] = useState(false);
   const fadeAnim = new Animated.Value(0);
 
-  const WS_URL = "ws://54.93.213.231:9090/micro_gs_data_blok_ws";
+  const WS_URL = "ws://0.0.0.0:9090/micro_gs_data_blok_ws";
   const MAX_RETRIES = 5;
   const RETRY_DELAY = 5000;
 

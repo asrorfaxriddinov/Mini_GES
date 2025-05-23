@@ -130,7 +130,7 @@ const CustomTabBar2 = ({ state, navigation, isDarkMode = false }: CustomTabBarPr
         style={{ alignItems: 'center', width: 70 }}
       >
         <Image
-          source={require('../../../assets/edit.png')}
+          source={require('../../../assets/boshqaruv.png')}
           style={{
             width: 25,
             height: 25,

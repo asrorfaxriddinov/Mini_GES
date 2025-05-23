@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import { Alert, AppState, Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
-import { AppState } from 'react-native';
+import { createStackNavigator } from '@react-navigation/stack';
 import { Provider } from 'react-redux';
+import messaging from '@react-native-firebase/messaging';
+
 import store from './redux/store';
 import CustomKeyboard from './Components/Password/password';
 import MainTabs from './Components/Navigation/Tabs1/MainTabs';
 import MainTabs2 from './Components/Navigation/Tabs2/MainTabs2';
 import DataTax from './Components/Data/Data';
-import { createStackNavigator } from '@react-navigation/stack';
+import { requestNotificationPermission, showNotification } from './Components/utils/notifications';
 
 const Stack = createStackNavigator();
 
@@ -18,8 +21,38 @@ export default function App() {
     setIsLoggedIn(true);
   };
 
+  // Bildirishnoma ruxsati va handlerlar
+  useEffect(() => {
+    requestNotificationPermission();
+
+    // Ilova orqa fonda bo‘lganida push
+    messaging().setBackgroundMessageHandler(async remoteMessage => {
+      console.log('📨 Orqa fonda push keldi:', remoteMessage);
+    });
+
+    // Ilova ochiq holatda bo‘lsa
+    messaging().onMessage(async remoteMessage => {
+      console.log('📩 Ilova ochiq holatda push keldi:', remoteMessage);
+      showNotification(); // notifee orqali ko‘rsatish
+    });
+  }, []);
+
+  // Ilova backgroundga o‘tganda API chaqiradi
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'background') {
+        sendApiRequest();
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
+  // Background API chaqiruv
   const sendApiRequest = () => {
-    fetch('http://54.93.213.231:9090/python_bool', {
+    fetch('http://0.0.0.0:9090/python_bool', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -33,19 +66,6 @@ export default function App() {
       .then((data) => console.log(data))
       .catch((error) => console.error('Error:', error));
   };
-
-  useEffect(() => {
-    // AppState o‘zgarishini kuzatish
-    const subscription = AppState.addEventListener('change', (nextAppState) => {
-      if (nextAppState === 'background') {
-        sendApiRequest();
-      }
-    });
-
-    return () => {
-      subscription.remove();
-    };
-  }, []);
 
   return (
     <Provider store={store}>

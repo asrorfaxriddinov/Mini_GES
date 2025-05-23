@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,78 +6,62 @@ import {
   StyleSheet,
   Dimensions,
   Animated,
-} from "react-native";
+} from 'react-native';
 
-const { width } = Dimensions.get("window");
+const { width } = Dimensions.get('window');
 
 const ErrorList = () => {
   const [errors, setErrors] = useState([]);
   const [showAllErrors, setShowAllErrors] = useState(false);
   const fadeAnim = new Animated.Value(0);
 
-  const WS_URL = "ws://54.93.213.231:9090/micro_gs_data_blok_ws1";
-  const MAX_RETRIES = 5;
-  const RETRY_DELAY = 5000;
+  const API_URL = 'http://0.0.0.0:9090/micro_gs_data_blok_read1';
+  const POLLING_INTERVAL = 1000; // 1 second
 
-  const connectWebSocket = (url: string | URL, retryCount = 0) => {
-    const socket = new WebSocket(url);
+  const fetchData = async () => {
+    try {
+      const response = await fetch(API_URL);
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const apiData = await response.json();
 
-    socket.onopen = () => {
-      console.log(`ErrorList WebSocket ulandi: ${url}`);
-    };
+      const specialElements = [
+        'автомат_выкл_akumlator',
+        'автомат_выкл_chastotnik_1',
+        'автомат_выкл_chastotnik_2',
+        'автомат_выкл_panel',
+        'автомат_выкл_ввод',
+        'автомат_выкл_генератор',
+        'автомат_выкл_солнеч_инвер',
+        'автомат_выкл_шин_DC_controller',
+      ];
+      const alarmElements = ['avariya_chastotnik', 'Авария'];
 
-    socket.onmessage = (event) => {
-      try {
-        const apiData = JSON.parse(event.data);
-        const specialElements = [
-          "автомат_выкл_akumlator",
-          "автомат_выкл_chastotnik_1",
-          "автомат_выкл_chastotnik_2",
-          "автомат_выкл_panel",
-          "автомат_выкл_ввод",
-          "автомат_выкл_генератор",
-          "автомат_выкл_солнеч_инвер",
-          "автомат_выкл_шин_DC_controller",
-        ];
-        const alarmElements = ["avariya_chastotnik", "Авария"];
-
-        const errorList: string[] = [];
-        Object.keys(apiData).forEach((section) => {
-          Object.keys(apiData[section]).forEach((key) => {
-            const value = apiData[section][key];
-            if (specialElements.includes(key) && value === 0) {
-              errorList.push(`${key}: O'chirilgan`);
-            } else if (alarmElements.includes(key) && value === 1) {
-              errorList.push(`${key}: Xatolik`);
-            }
-          });
+      const errorList = [];
+      Object.keys(apiData).forEach((section) => {
+        Object.keys(apiData[section]).forEach((key) => {
+          const value = apiData[section][key];
+          if (specialElements.includes(key) && value === 0) {
+            errorList.push(`${key}: O'chirilgan`);
+          } else if (alarmElements.includes(key) && value === 1) {
+            errorList.push(`${key}: Xatolik`);
+          }
         });
+      });
 
-        setErrors(errorList);
-      } catch (error) {
-        console.error("ErrorList WebSocket ma'lumotlarini parse qilishda xato:", error);
-      }
-    };
-
-    socket.onerror = (error) => {
-      console.error(`ErrorList WebSocket xatosi: ${url}`, error);
-    };
-
-    socket.onclose = () => {
-      console.log(`ErrorList WebSocket uzildi: ${url}`);
-      if (retryCount < MAX_RETRIES) {
-        console.log(`ErrorList Qayta ulanish urinilmoqda (${retryCount + 1}/${MAX_RETRIES})...`);
-        setTimeout(() => connectWebSocket(url, retryCount + 1), RETRY_DELAY);
-      } else {
-        console.error(`ErrorList Maksimal urinishlar soniga yetdi: ${url}`);
-      }
-    };
-
-    return socket;
+      setErrors(errorList);
+    } catch (error) {
+      console.error("ErrorList ma'lumot olishda xato:", error);
+    }
   };
 
   useEffect(() => {
-    const socket = connectWebSocket(WS_URL);
+    // Start polling when component mounts
+    fetchData(); // Initial fetch
+    const intervalId = setInterval(fetchData, POLLING_INTERVAL);
+
+    // Start blinking animation
     Animated.loop(
       Animated.sequence([
         Animated.timing(fadeAnim, {
@@ -95,14 +79,15 @@ const ErrorList = () => {
       ])
     ).start();
 
+    // Cleanup: stop polling and animation when component unmounts
     return () => {
-      socket.close();
+      clearInterval(intervalId);
     };
   }, []);
 
   const textColor = fadeAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: ["#ff0000", "#ff0000"],
+    outputRange: ['#ff0000', '#ff0000'],
   });
 
   // Modal faqat xatolar bo'lsa ko'rinadi
@@ -123,7 +108,7 @@ const ErrorList = () => {
               {errors.length} ta xatolik mavjud
             </Animated.Text>
             <Animated.Text style={[styles.arrow, { color: textColor }]}>
-            Ko'proq
+              Ko'proq
             </Animated.Text>
           </TouchableOpacity>
         ) : (
@@ -154,38 +139,29 @@ const ErrorList = () => {
 
 const styles = StyleSheet.create({
   modalContainer: {
- // Modal faqat o'z joyini egallaydi
-  
     width: width,
-    alignItems: "center",
-    zIndex: 1000, // Modal boshqa elementlar ustida bo'ladi
+    alignItems: 'center',
+    zIndex: 1000,
   },
   modalContent: {
-    width: width * 0.9, // Modalning kengligi ekran kengligining 90%
-    backgroundColor: "rgba(0,0,0,0.2)",
+    width: width * 0.9,
+    backgroundColor: 'rgba(0,0,0,0.2)',
     borderRadius: 10,
     padding: 5,
-    alignItems: "center",
-
-  
+    alignItems: 'center',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 10,
   },
   modalText: {
     fontSize: 16,
     marginVertical: 5,
   },
   errorCountContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    width: "100%",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
     paddingVertical: 5,
   },
   closeButton: {

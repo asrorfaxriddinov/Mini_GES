@@ -69,8 +69,8 @@ const Boshqaruv = () => {
   };
 
   useEffect(() => {
-    const WS_URL1 = "ws://54.93.213.231:9090/micro_gs_data_blok_ws1";
-    const WS_URL2 = "ws://54.93.213.231:9090/datas_ws";
+    const WS_URL1 = "ws://0.0.0.0:9090/micro_gs_data_blok_ws1";
+    const WS_URL2 = "ws://0.0.0.0:9090/datas_ws";
 
     const socket1 = connectWebSocket(WS_URL1, (event) => {
       try {
@@ -139,7 +139,7 @@ const Boshqaruv = () => {
   }, [isPressed4]);
 
   useEffect(() => {
-    const WS_URL3 = "ws://54.93.213.231:9090/getall_ws";
+    const WS_URL3 = "ws://0.0.0.0:9090/getall_ws";
   
     const socket3 = connectWebSocket(WS_URL3, (event) => {
       try {
@@ -177,7 +177,7 @@ const Boshqaruv = () => {
 
   const sendPostRequest = async (key: string, value: number, autoReset = false) => {
     try {
-      const response = await fetch("http://54.93.213.231:9090/datas_post", {
+      const response = await fetch("http://0.0.0.0:9090/datas_post", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ key, value }),
@@ -185,7 +185,7 @@ const Boshqaruv = () => {
 
       if (autoReset && value === 1) {
         setTimeout(async () => {
-          await fetch("http://54.93.213.231:9090/datas_post", {
+          await fetch("http://0.0.0.0:9090/datas_post", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ key, value: 0 }),
@@ -214,7 +214,7 @@ const Boshqaruv = () => {
 
       console.log("Sending monitor POST request with payload:", payload);
 
-      const response = await fetch("http://54.93.213.231:9090/post_monitor", {
+      const response = await fetch("http://0.0.0.0:9090/post_monitor", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -245,7 +245,7 @@ const Boshqaruv = () => {
         return;
       }
     
-      const response = await fetch("http://54.93.213.231:9090/active", {
+      const response = await fetch("http://0.0.0.0:9090/active", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -262,7 +262,7 @@ const Boshqaruv = () => {
 
   const checkActiveUsersAndEmail = async () => {
     try {
-      const response = await fetch("http://54.93.213.231:9090/getall", {
+      const response = await fetch("http://0.0.0.0:9090/getall", {
         method: "GET",
         headers: { "Content-Type": "application/json" },
       });
@@ -371,7 +371,7 @@ const Boshqaruv = () => {
   const Chastotnik2 = () => setModalVisible2(true);
 
   const showCamera = async () => {
-    await fetch("http://54.93.213.231:9090/booling_post", {
+    await fetch("http://0.0.0.0:9090/booling_post", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ key: "bool_kamera", value: true }),
@@ -385,7 +385,7 @@ const Boshqaruv = () => {
     setTarix(true)
   } 
   const hideCamera = async () => {
-    await fetch("http://54.93.213.231:9090/booling_post", {
+    await fetch("http://0.0.0.0:9090/booling_post", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ key: "bool_kamera", value: false }),

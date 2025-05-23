@@ -1,6 +1,7 @@
 {
   "expo": {
     "name": "Mini GES",
+    "displayName": "Mini GES",
     "slug": "Mini GES",
     "version": "1.0.0",
     "orientation": "portrait",

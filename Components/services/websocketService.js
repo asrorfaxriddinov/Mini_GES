@@ -1,7 +1,7 @@
 import Sound from 'react-native-sound';
 import { showNotification } from '../utils/notifications';
 
-const ws = new WebSocket('ws://54.93.213.231:9090/micro_gs_data_blok_ws');
+const ws = new WebSocket('ws://0.0.0.0:9090/micro_gs_data_blok_ws');
 
 export const startWebSocket = () => {
   ws.onopen = () => {

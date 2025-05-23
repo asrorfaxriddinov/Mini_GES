@@ -1,15 +1,30 @@
 import React, { useState, useEffect } from "react";
-import {  View,  TouchableOpacity,  StyleSheet,  Text,  Alert,  Image,  StatusBar,  Dimensions,  Animated,  Modal,  TextInput,  Platform,} from "react-native";
+import {
+  View,
+  TouchableOpacity,
+  StyleSheet,
+  Text,
+  Alert,
+  Image,
+  StatusBar,
+  Dimensions,
+  Animated,
+  Modal,
+  TextInput,
+  Platform,
+} from "react-native";
 import * as LocalAuthentication from "expo-local-authentication";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import * as ImagePicker from "expo-image-picker";
+import messaging from '@react-native-firebase/messaging';
 
 const { width, height } = Dimensions.get("window");
 
 interface CustomKeyboardProps {
   onLogin: () => void;
 }
+
 const CustomKeyboard: React.FC<CustomKeyboardProps> = ({ onLogin }) => {
   const [input, setInput] = useState<string[]>([]);
   const [isError, setIsError] = useState(false);
@@ -25,6 +40,62 @@ const CustomKeyboard: React.FC<CustomKeyboardProps> = ({ onLogin }) => {
   const [isFingerprintPromptVisible, setIsFingerprintPromptVisible] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState<string>("");
+
+  const sendTokenToServer = async () => {
+    // Check if token has already been sent
+    const tokenSent = await AsyncStorage.getItem("tokenSent");
+    if (tokenSent === "true") {
+      console.log("Token already sent, skipping...");
+      return;
+    }
+
+    const authStatus = await messaging().requestPermission();
+    const enabled =
+      authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+      authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+
+    if (enabled) {
+      try {
+        const token = await messaging().getToken();
+        console.log('FCM token:', token);
+
+        const res = await fetch('http://192.168.0.44:6000/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token }),
+        });
+
+        if (res.ok) {
+          // Mark token as sent in AsyncStorage
+          await AsyncStorage.setItem("tokenSent", "true");
+          Alert.alert('✅ Muvaffaqiyatli', 'Token yuborildi');
+        } else {
+          Alert.alert('❌ Xatolik', 'Serverdan xatolik');
+        }
+      } catch (e) {
+        console.log('Yuborishda xatolik:', e);
+        Alert.alert('❌ Xatolik', 'Token yuborilmadi');
+      }
+    } else {
+      Alert.alert('⚠️ Ruxsat', 'Push ruxsat yo‘q');
+    }
+  };
+
+  // Automatically send token on first mount
+  useEffect(() => {
+    sendTokenToServer();
+  }, []);
+
+  // FCM message listener
+  useEffect(() => {
+    const unsubscribe = messaging().onMessage(async remoteMessage => {
+      const title = remoteMessage.notification?.title || '';
+      const body = remoteMessage.notification?.body || '';
+      Alert.alert(title, body);
+    });
+
+    return unsubscribe;
+  }, []);
 
   const fetchData = async () => {
     try {
@@ -42,9 +113,10 @@ const CustomKeyboard: React.FC<CustomKeyboardProps> = ({ onLogin }) => {
   useEffect(() => {
     fetchData();
   }, []);
+
   useEffect(() => {
     handleFingerprint();
-  }, []); 
+  }, []);
 
   useEffect(() => {
     if (input.length === 4) {
@@ -73,7 +145,7 @@ const CustomKeyboard: React.FC<CustomKeyboardProps> = ({ onLogin }) => {
 
   useEffect(() => {
     const sendApiRequest = () => {
-      fetch("http://54.93.213.231:9090/python_bool", {
+      fetch("http://0.0.0.0:9090/python_bool", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ key: "bool_python", value: true }),
@@ -122,6 +194,7 @@ const CustomKeyboard: React.FC<CustomKeyboardProps> = ({ onLogin }) => {
       Alert.alert("Xatolik", "Barmoq izi tasdiqlashda xatolik yuz berdi");
     }
   };
+
   const openModal = () => {
     setModalVisible(true);
     setStep(1);
@@ -132,6 +205,7 @@ const CustomKeyboard: React.FC<CustomKeyboardProps> = ({ onLogin }) => {
     setSelectedImage(null);
     setImageUrl("");
   };
+
   const closeModal = () => {
     setModalVisible(false);
     setStep(1);
@@ -176,7 +250,7 @@ const CustomKeyboard: React.FC<CustomKeyboardProps> = ({ onLogin }) => {
       } as any);
 
       const response = await axios.post(
-        "http://54.93.213.231:9090/upload_image",
+        "http://0.0.0.0:9090/upload_image",
         formData,
         {
           headers: {
@@ -213,7 +287,7 @@ const CustomKeyboard: React.FC<CustomKeyboardProps> = ({ onLogin }) => {
     try {
       console.log("Sending payload to /register:", { email, image: imageUrl, full_name: fullName });
       const response = await axios.post(
-        "http://54.93.213.231:9090/register",
+        "http://0.0.0.0:9090/register",
         { email, image: imageUrl, full_name: fullName },
         { timeout: 5000 }
       );
@@ -230,6 +304,7 @@ const CustomKeyboard: React.FC<CustomKeyboardProps> = ({ onLogin }) => {
       );
     }
   };
+
   const handleGoo = async () => {
     if (manualEmail.trim() === "" || id.trim() === "") {
       Alert.alert("Xatolik", "Iltimos, email va ID ni kiriting");
@@ -242,7 +317,7 @@ const CustomKeyboard: React.FC<CustomKeyboardProps> = ({ onLogin }) => {
     try {
       console.log("Sending payload to /confirm:", { email: manualEmail, id });
       const response = await axios.post(
-        "http://54.93.213.231:9090/confirm",
+        "http://0.0.0.0:9090/confirm",
         { email: manualEmail, id },
         { timeout: 5000 }
       );
@@ -264,7 +339,9 @@ const CustomKeyboard: React.FC<CustomKeyboardProps> = ({ onLogin }) => {
       );
     }
   };
+
   const numberButtons = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
+
   return (
     <View style={styles.container}>
       <View style={styles.logo}>
@@ -397,6 +474,7 @@ const CustomKeyboard: React.FC<CustomKeyboardProps> = ({ onLogin }) => {
     </View>
   );
 };
+
 const styles = StyleSheet.create({
   imageButton: {
     backgroundColor: "#4361ee",

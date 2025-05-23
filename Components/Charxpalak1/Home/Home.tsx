@@ -26,6 +26,7 @@ const Home = () => {
     B_current: "0",
     C_current: "0",
     Output_power: "0 W",
+    Total_generating_capacity: "0 kW",
     temperatureData: {
       ichki_real_namlik: "0 %",
       ichki_real_temp: "0 °C",
@@ -34,7 +35,7 @@ const Home = () => {
     },
   });
 
-  const API_URL = "ws://54.93.213.231:9090/micro_gs_data_blok_ws";
+  const API_URL = "ws://0.0.0.0:9090/micro_gs_data_blok_ws";
 
   const connectWebSocket = () => {
     const ws = new WebSocket(API_URL);
@@ -58,16 +59,17 @@ const Home = () => {
           generator_current: `${windController.generator_current / 10 || 0} A`,
           rpm: `${windController.rpm || 0} rpm`,
           Suv_balandligi: `${windController1.уревон_воды || 0} sm`,
-          active_power: `${windController2.active_power || 0} kW`,
-          A_faza_voltage: `${windController3.A_faza_voltage || 0}`,
-          B_faza_voltage: `${windController3.B_faza_voltage || 0}`,
-          C_faza_voltage: `${windController3.C_faza_voltage || 0}`,
-          A_current: `${windController3.A_current || 0}`,
-          B_current: `${windController3.B_current || 0}`,
-          C_current: `${windController3.C_current || 0}`,
-          Output_power: `${windController2.Output_power || 0} kW`,
+          active_power: `${((windController2['Active power'] / 1000) || 0).toFixed(1)} kW`,
+          A_faza_voltage: `${windController3.A_faza_voltage || 0} `,
+          B_faza_voltage: `${windController3.B_faza_voltage || 0} `,
+          C_faza_voltage: `${windController3.C_faza_voltage || 0} `,
+          A_current: `${windController3.A_current || 0} `,
+          B_current: `${windController3.B_current || 0} `,
+          C_current: `${windController3.C_current || 0} `,
+          Output_power: `${((windController2['Output power'] / 1000) || 0).toFixed(1)} kW`,
+          Total_generating_capacity: `${windController2['Total generating capacity'] || 0} kW`,
           temperatureData: {
-            ichki_real_namlik: `${tempData.ichki_real_namlik || 0} %`,
+            ichki_real_namlik: `${tempData.ichki_real_namnik || 0} %`,
             ichki_real_temp: `${tempData.ichki_real_temp || 0} °C`,
             tashqi_real_namlik: `${tempData.tashqi_real_namlik || 0} %`,
             tashqi_real_temp: `${tempData.tashqi_real_temp || 0} °C`,
@@ -84,7 +86,7 @@ const Home = () => {
 
     ws.onclose = () => {
       console.log("WebSocket ulanishi uzildi");
-      setTimeout(() => connectWebSocket(), 2000); // Ulanish uzilganda qayta ulanish
+      setTimeout(() => connectWebSocket(), 2000);
     };
 
     return ws;
@@ -92,8 +94,6 @@ const Home = () => {
 
   useEffect(() => {
     const ws = connectWebSocket();
-
-    // Komponent o'chirilganda WebSocket ulanishini yopish
     return () => {
       ws.close();
     };
@@ -121,23 +121,35 @@ const Home = () => {
     { value: cardValues.B_current },
     { value: cardValues.C_current },
     { value: cardValues.Output_power },
+    { value: cardValues.Output_power },
+    { value: cardValues.Total_generating_capacity },
   ];
 
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Text style={{ fontSize: 30, fontWeight: "bold" }}>
-          Yellow Water Wheel
+          Red Water Wheel
         </Text>
         <Text style={{ fontSize: 20, textAlign: "center" }}>
           Chaxpalakning real vaqtdagi texnik malumotlari
         </Text>
       </View>
-      <View style={{right:'5%',top:'0%'}}>
-      <ErrorList  />
+      <View style={{ right: "5%", top: "0%" }}>
+        <ErrorList />
       </View>
       <View style={styles.cardsContainer}>
         <View style={styles.card}>
+        <Text
+            style={{
+              fontSize: 16,
+              textAlign: "center",
+              color: parseFloat(cardValues.rpm) > 0 ? "#38b000" : "red",
+              fontWeight:'bold'
+            }}
+          >
+            Generator
+          </Text>
           <Image source={cardData[0].image} style={styles.cardImage} />
           <Text style={styles.cardValue}>{cardData[0].value}</Text>
         </View>
@@ -150,13 +162,34 @@ const Home = () => {
           <ElectricDashedLine />
         </View>
         <View style={styles.card}>
+        <Text
+            style={{
+              fontSize: 16,
+              textAlign: "center",
+              color: parseFloat(cardValues.rpm) > 0 ? "#38b000" : "red",
+              fontWeight:'bold'
+            }}
+          >
+            Controller
+          </Text>
           <Image source={cardData[1].image} style={styles.cardImage} />
           <Text style={styles.cardValue}>{cardData[1].value}</Text>
           <Text style={styles.cardValue}>{cardData[2].value}</Text>
           <Text style={styles.cardValue}>{cardData[4].value}</Text>
         </View>
         <View style={styles.card}>
+        <Text
+            style={{
+              fontSize: 16,
+              textAlign: "center",
+              color: parseFloat(cardValues.rpm) > 0 ? "#38b000" : "red",
+              fontWeight:'bold'
+            }}
+          >
+            Elektr tarmog'i
+          </Text>
           <Image source={cardData[2].image} style={styles.cardImage} />
+          <Text style={styles.cardValue}>{cardData[13].value}</Text>
         </View>
         <View style={styles.dashContainerVertical}>
           <ElectricDashedLine />
@@ -165,27 +198,36 @@ const Home = () => {
           <ElectricDashedLine />
         </View>
         <View style={styles.card}>
+          <Text
+            style={{
+              fontSize: 20,
+              textAlign: "center",
+              color: parseFloat(cardValues.rpm) > 0 ? "#38b000" : "red",
+              fontWeight:'bold'
+            }}
+          >
+            Invertor
+          </Text>
           <Image source={cardData[3].image} style={styles.cardImage} />
           <View style={{ flexDirection: "row", top: "5%" }}>
-            <View>
-              <Text>V </Text>
-              <Text>{cardData[8].value}</Text>
-              <Text>{cardData[9].value}</Text>
-              <Text>{cardData[10].value}</Text>
+            <View style={{right:10}}>
+              <Text style={styles.text}>A </Text>
+              <Text style={styles.text}>{Number(cardData[8]?.value) / 10}</Text>
+              <Text style={styles.text}>{Number(cardData[9]?.value) / 10}</Text>
+              <Text style={styles.text}>{Number(cardData[10]?.value) / 10}</Text>
             </View>
-            <View>
-              <Text> A</Text>
-              <Text>{cardData[5].value}</Text>
-              <Text>{cardData[6].value}</Text>
-              <Text>{cardData[7].value}</Text>
+            <View style={{left:10}}>
+              <Text style={styles.text}> V</Text>
+              <Text style={styles.text}>{Number(cardData[5]?.value) / 10}</Text>
+              <Text style={styles.text}>{Number(cardData[6]?.value) / 10}</Text>
+              <Text style={styles.text}>{Number(cardData[7]?.value) / 10}</Text>
             </View>
           </View>
-          <View style={{ top: "4%" }}>
-            <Text>{cardData[11].value}</Text>
+          <View style={{ top: "8%", paddingBottom: "7%" }}>
+            <Text style={styles.text}>{cardData[11].value}</Text>
           </View>
         </View>
       </View>
-      {/* Temperature Card */}
       <View style={styles.temperatureCardContainer}>
         <View style={styles.card1}>
           <Text style={styles.cardTitle}>Atrof-muhit ma'lumotlari</Text>
@@ -232,8 +274,11 @@ const styles = StyleSheet.create({
     marginVertical: "2.5%",
     transform: [{ rotate: "90deg" }],
     position: "absolute",
-    top: "33.5%",
+    top: "34.5%",
     left: (width - -420) / 4 + 40,
+  },
+  text:{ 
+    fontWeight:'bold'
   },
   header: {
     alignItems: "center",
@@ -258,6 +303,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: "23%",
     backgroundColor: "#fff0f3",
+    paddingBottom: "7%",
   },
   card1: {
     width: (width - width * 0.003) / 2,
